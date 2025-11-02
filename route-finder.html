@@ -91,14 +91,58 @@
           </form>
 
           <div id="resultsContainer" class="results-container">
-            <h2 id="resultsHeader" class="section-heading"></h2>
+            <div class="results-header">
+              <h2 id="resultsHeader" class="section-heading"></h2>
+              <div class="results-actions">
+                <button id="saveFavoriteBtn" class="btn btn-secondary">Save to Favorites</button>
+                <button id="refreshRouteBtn" class="btn btn-outline">Refresh</button>
+              </div>
+            </div>
+
+            <!-- Weather Widget -->
+            <div id="weatherWidget" class="weather-widget" style="display: none;">
+              <div class="weather-content">
+                <span id="weatherIcon">🌤️</span>
+                <span id="weatherTemp">--°C</span>
+                <span id="weatherDesc">Loading...</span>
+              </div>
+            </div>
+
+            <!-- Enhanced Route Display -->
+            <div id="routeDetails" class="route-details" style="display: none;">
+              <div class="route-summary">
+                <div class="summary-item">
+                  <span class="label">Total Time:</span>
+                  <span id="totalTime" class="value">-- min</span>
+                </div>
+                <div class="summary-item">
+                  <span class="label">Distance:</span>
+                  <span id="totalDistance" class="value">-- km</span>
+                </div>
+                <div class="summary-item">
+                  <span class="label">Segments:</span>
+                  <span id="segmentCount" class="value">--</span>
+                </div>
+                <div class="summary-item">
+                  <span class="label">Optimization:</span>
+                  <span class="value">Dijkstra Algorithm</span>
+                </div>
+              </div>
+
+              <div id="routeSegments" class="route-segments" style="display: none;">
+                <!-- Dynamic segment breakdown will be inserted here -->
+              </div>
+            </div>
+
+            <!-- Existing route cards container -->
             <div id="routeCardsContainer"></div>
+
             <div
               id="noResultsMessage"
               class="no-results-message"
               style="display: none"
             >
-              No direct share-auto route found. Try nearby stands.
+              No optimal route found. Try different locations or check network connectivity.
             </div>
           </div>
 
