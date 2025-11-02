@@ -70,6 +70,18 @@ class NetworkData {
 
       console.log(`Network loaded: ${this.stands.size} stands, ${connections.length} connections`);
 
+      // Debug: Check if graph has valid connections
+      const nodeCount = Object.keys(nodes).length;
+      let totalConnections = 0;
+      Object.values(nodes).forEach(node => {
+        totalConnections += Object.keys(node).length;
+      });
+      console.log(`Graph: ${nodeCount} nodes with ${totalConnections} total connections`);
+
+      if (totalConnections === 0 && nodeCount > 1) {
+        console.log('WARNING: Graph has no connections between nodes!');
+      }
+
     } catch (error) {
       console.error('Error loading network data:', error);
       throw error;
