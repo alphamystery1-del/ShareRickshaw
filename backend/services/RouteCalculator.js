@@ -192,6 +192,138 @@ class RouteCalculator {
     return route;
   }
 
+  async createFallbackRoute(fromStand, toStand, toDestinationCoords, toDestinationName) {
+    console.log(`Creating fallback route from ${fromStand.name} to ${toStand.name}`);
+
+    try {
+      // Get OSRM route data for direct connection
+      const osrmRoute = await this.osrmService.getRouteBetweenStands(fromStand, toStand, 'bike');
+
+      const segmentTime = Math.ceil(osrmRoute.duration / 60) + this.RICKSHAW_DELAY_MINUTES;
+      const segmentDistance = osrmRoute.distance / 1000; // Convert to km
+
+      // Create direct route segment
+      const segments = [{
+        type: 'rickshaw',
+        from_stand: fromStand,
+        to_stand: toStand,
+        distance: segmentDistance,
+        time: segmentTime,
+        osrm_duration: Math.ceil(osrmRoute.duration / 60),
+        delay: this.RICKSHAW_DELAY_MINUTES,
+        geometry: osrmRoute.geometry
+      }];
+
+      // Add final segment from last stand to exact destination if needed
+      const finalDistance = this.networkData.calculateDistance(
+        toStand.latitude, toStand.longitude,
+        toDestinationCoords.lat, toDestinationCoords.lng
+      );
+
+      let finalSegment = null;
+      let totalTime = segmentTime;
+      let totalDistance = segmentDistance;
+
+      if (finalDistance > 0.1) { // Only add if destination is more than 100m from stand
+        const walkingTime = await this.osrmService.getWalkingTime(
+          [toStand.latitude, toStand.longitude],
+          [toDestinationCoords.lat, toDestinationCoords.lng]
+        );
+
+        totalTime += walkingTime;
+        totalDistance += finalDistance;
+
+        finalSegment = {
+          type: 'walking',
+          from_stand: toStand,
+          to_destination: {
+            name: toDestinationName || 'Destination',
+            latitude: toDestinationCoords.lat,
+            longitude: toDestinationCoords.lng
+          },
+          distance: finalDistance,
+          time: walkingTime,
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [toStand.longitude, toStand.latitude],
+              [toDestinationCoords.lng, toDestinationCoords.lat]
+            ]
+          }
+        };
+      }
+
+      const route = {
+        segments: finalSegment ? [segments[0], finalSegment] : segments,
+        total_time: totalTime,
+        total_distance: totalDistance,
+        segment_count: segments.length + (finalSegment ? 1 : 0),
+        from_stand: fromStand,
+        to_stand: toStand,
+        to_destination: {
+          name: toDestinationName || toStand.name,
+          latitude: toDestinationCoords.lat,
+          longitude: toDestinationCoords.lng
+        },
+        path: [fromStand.id, toStand.id],
+        delays_applied: segments.length * this.RICKSHAW_DELAY_MINUTES,
+        fallback: true
+      };
+
+      console.log(`Fallback route created: ${totalTime} minutes, ${totalDistance.toFixed(2)} km, ${route.segment_count} segments`);
+
+      return route;
+
+    } catch (error) {
+      console.error('Error creating fallback route:', error);
+
+      // Ultimate fallback: create a simple straight-line route
+      const distance = this.networkData.calculateDistance(
+        fromStand.latitude, fromStand.longitude,
+        toStand.latitude, toStand.longitude
+      );
+
+      const estimatedTime = Math.round((distance / 15) * 60) + this.RICKSHAW_DELAY_MINUTES; // 15 km/h avg speed + delay
+
+      const route = {
+        segments: [{
+          type: 'rickshaw',
+          from_stand: fromStand,
+          to_stand: toStand,
+          distance: distance,
+          time: estimatedTime,
+          osrm_duration: estimatedTime - this.RICKSHAW_DELAY_MINUTES,
+          delay: this.RICKSHAW_DELAY_MINUTES,
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [fromStand.longitude, fromStand.latitude],
+              [toStand.longitude, toStand.latitude]
+            ]
+          }
+        }],
+        total_time: estimatedTime,
+        total_distance: distance,
+        segment_count: 1,
+        from_stand: fromStand,
+        to_stand: toStand,
+        to_destination: {
+          name: toDestinationName || toStand.name,
+          latitude: toDestinationCoords.lat,
+          longitude: toDestinationCoords.lng
+        },
+        path: [fromStand.id, toStand.id],
+        delays_applied: this.RICKSHAW_DELAY_MINUTES,
+        fallback: true,
+        estimated: true
+      };
+
+      console.log(`Ultimate fallback route created: ${estimatedTime} minutes, ${distance.toFixed(2)} km`);
+
+      return route;
+    }
+  }
+
   async calculateTransferBetweenZones(fromStand, toStand) {
     // For transfers between different network zones
     try {
