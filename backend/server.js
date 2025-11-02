@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const standsRoutes = require('./routes/stands');
 const routesRoutes = require('./routes/routes');
+const routeCalculationRoutes = require('./routes/routeCalculation');
 const bookingsRoutes = require('./routes/bookings');
 
 // Import middleware and services
