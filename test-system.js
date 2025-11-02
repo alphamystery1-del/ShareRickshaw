@@ -95,6 +95,20 @@ jsFiles.forEach(file => {
   }
 });
 
+// Additional check: Verify no API_BASE_URL conflicts in enhancedRouteFinder.js
+try {
+  const enhancedContent = fs.readFileSync('js/enhancedRouteFinder.js', 'utf8');
+  const apiBaseUrlMatches = enhancedContent.match(/const API_BASE_URL/g);
+  if (apiBaseUrlMatches) {
+    console.log(`   ❌ js/enhancedRouteFinder.js - API_BASE_URL variable conflict detected`);
+    syntaxOk = false;
+  } else {
+    console.log(`   ✅ No API_BASE_URL conflicts in enhancedRouteFinder.js`);
+  }
+} catch (error) {
+  console.log(`   ⚠️  Could not check for API_BASE_URL conflicts`);
+}
+
 if (!syntaxOk) {
   console.log('\n❌ Some JavaScript files have syntax errors!');
   process.exit(1);
