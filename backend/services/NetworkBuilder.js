@@ -29,7 +29,9 @@ class NetworkBuilder {
         const stand1 = stands[i];
         const nearbyStands = [];
 
-        for (let j = i + 1; j < stands.length; j++) {
+        for (let j = 0; j < stands.length; j++) {
+          if (i === j) continue; // Skip self
+
           const stand2 = stands[j];
           const distance = this.calculateDistance(
             stand1.latitude, stand1.longitude,
