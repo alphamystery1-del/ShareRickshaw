@@ -289,3 +289,315 @@ function showError(message) {
     </div>
   `;
 }
+
+// ============================================
+// Enhanced Route Visualization Functions
+// ============================================
+
+// 13. Display route on map (for enhanced route finder)
+function displayRouteOnMap(route) {
+  if (!map || !route) return;
+
+  // Clear existing route layers
+  clearRouteLayers();
+
+  try {
+    // Collect all route coordinates
+    const allCoordinates = [];
+
+    // Process each segment
+    route.segments.forEach((segment, index) => {
+      if (segment.geometry && segment.geometry.coordinates) {
+        // OSRM returns coordinates in [lng, lat] format, Leaflet needs [lat, lng]
+        const segmentCoordinates = segment.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+        allCoordinates.push(...segmentCoordinates);
+
+        // Create segment-specific styling
+        const segmentColor = segment.type === 'rickshaw' ? '#ff6b6b' : '#4285f4';
+        const segmentWeight = segment.type === 'rickshaw' ? 4 : 3;
+
+        // Draw segment polyline
+        const polyline = L.polyline(segmentCoordinates, {
+          color: segmentColor,
+          weight: segmentWeight,
+          opacity: 0.8,
+          smoothFactor: 1
+        }).addTo(map);
+
+        // Add popup for segment
+        const segmentInfo = createSegmentPopupContent(segment, index + 1);
+        polyline.bindPopup(segmentInfo);
+
+        routeLayers.push(polyline);
+
+        // Add arrow markers to show direction
+        addDirectionArrows(segmentCoordinates, segmentColor);
+      }
+
+      // Add markers for stands and transfer points
+      if (segment.from_stand) {
+        const marker = createRouteMarker(segment.from_stand, `Stand ${index + 1}`, 'stand');
+        routeLayers.push(marker);
+      }
+
+      if (segment.to_stand && index === route.segments.length - 1) {
+        const marker = createRouteMarker(segment.to_stand, `Destination Stand`, 'destination');
+        routeLayers.push(marker);
+      }
+    });
+
+    // Add destination marker if coordinates are available
+    if (route.to_destination && route.to_destination.latitude && route.to_destination.longitude) {
+      const destMarker = createRouteMarker(
+        {
+          latitude: route.to_destination.latitude,
+          longitude: route.to_destination.longitude,
+          name: route.to_destination.name
+        },
+        'Final Destination',
+        'final-destination'
+      );
+      routeLayers.push(destMarker);
+    }
+
+    // Fit map to route bounds with padding
+    if (allCoordinates.length > 0) {
+      const routeBounds = L.latLngBounds(allCoordinates);
+      map.fitBounds(routeBounds, {
+        padding: [50, 50],
+        maxZoom: 16
+      });
+    }
+
+    console.log(`Route displayed with ${routeLayers.length} layers`);
+
+  } catch (error) {
+    console.error('Error displaying route on map:', error);
+  }
+}
+
+// 14. Create popup content for route segments
+function createSegmentPopupContent(segment, segmentNumber) {
+  const segmentType = segment.type === 'rickshaw' ? '🛺 Rickshaw' : '🚶 Walking';
+  const delayInfo = segment.delay ? `<br><small>⏱️ Includes ${segment.delay} min delay</small>` : '';
+
+  return `
+    <div class="route-segment-popup">
+      <strong>Segment ${segmentNumber}: ${segmentType}</strong><br>
+      <strong>From:</strong> ${segment.from_stand ? segment.from_stand.name : 'Current location'}<br>
+      <strong>To:</strong> ${segment.to_stand ? segment.to_stand.name : segment.to_destination.name}<br>
+      <strong>Time:</strong> ${segment.time} minutes${delayInfo}<br>
+      <strong>Distance:</strong> ${segment.distance.toFixed(1)} km
+    </div>
+  `;
+}
+
+// 15. Create markers for route visualization
+function createRouteMarker(location, title, type) {
+  const iconOptions = {
+    'stand': {
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    },
+    'destination': {
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    },
+    'final-destination': {
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    }
+  };
+
+  const icon = L.icon(iconOptions[type] || iconOptions['stand']);
+
+  const marker = L.marker([location.latitude, location.longitude], { icon: icon })
+    .bindPopup(`<strong>${title}</strong><br>${location.name}`);
+
+  marker.addTo(map);
+  return marker;
+}
+
+// 16. Add direction arrows to show route flow
+function addDirectionArrows(coordinates, color) {
+  if (coordinates.length < 2) return;
+
+  // Add arrows at regular intervals
+  const arrowInterval = Math.max(1, Math.floor(coordinates.length / 5)); // Max 5 arrows per segment
+
+  for (let i = arrowInterval; i < coordinates.length; i += arrowInterval) {
+    if (i < coordinates.length - 1) {
+      const start = coordinates[i];
+      const end = coordinates[Math.min(i + 1, coordinates.length - 1)];
+
+      // Calculate arrow direction
+      const angle = Math.atan2(end[1] - start[1], end[0] - start[0]) * 180 / Math.PI;
+
+      const arrowIcon = L.divIcon({
+        html: `<div style="
+          color: ${color};
+          font-size: 16px;
+          font-weight: bold;
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+          transform: rotate(${angle}deg);
+        ">▶</div>`,
+        className: 'route-arrow',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+
+      const arrowMarker = L.marker(start, { icon: arrowIcon }).addTo(map);
+      routeLayers.push(arrowMarker);
+    }
+  }
+}
+
+// 17. Clear all route layers
+function clearRouteLayers() {
+  routeLayers.forEach(layer => {
+    if (map.hasLayer(layer)) {
+      map.removeLayer(layer);
+    }
+  });
+  routeLayers = [];
+}
+
+// 18. Highlight specific stand in route
+function highlightStandInRoute(standId) {
+  if (!markers[standId]) return;
+
+  // Create pulsing effect for the stand marker
+  const originalIcon = markers[standId].getIcon();
+  const highlightIcon = L.icon({
+    ...originalIcon.options,
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png'
+  });
+
+  markers[standId].setIcon(highlightIcon);
+  markers[standId].openPopup();
+
+  // Reset icon after 3 seconds
+  setTimeout(() => {
+    markers[standId].setIcon(originalIcon);
+  }, 3000);
+}
+
+// 19. Animate route drawing (progressive reveal)
+function animateRouteDrawing(route) {
+  if (!map || !route) return;
+
+  clearRouteLayers();
+  let currentSegment = 0;
+
+  function drawNextSegment() {
+    if (currentSegment >= route.segments.length) return;
+
+    const segment = route.segments[currentSegment];
+    if (segment.geometry && segment.geometry.coordinates) {
+      const segmentCoordinates = segment.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+      const segmentColor = segment.type === 'rickshaw' ? '#ff6b6b' : '#4285f4';
+
+      // Animate the polyline drawing
+      const polyline = L.polyline(segmentCoordinates, {
+        color: segmentColor,
+        weight: 4,
+        opacity: 0,
+        smoothFactor: 1
+      }).addTo(map);
+
+      // Fade in the segment
+      setTimeout(() => {
+        polyline.setStyle({ opacity: 0.8 });
+      }, 100);
+
+      routeLayers.push(polyline);
+
+      // Add stand marker
+      if (segment.from_stand) {
+        const marker = createRouteMarker(segment.from_stand, `Stand ${currentSegment + 1}`, 'stand');
+        routeLayers.push(marker);
+      }
+    }
+
+    currentSegment++;
+
+    // Draw next segment after delay
+    if (currentSegment < route.segments.length) {
+      setTimeout(drawNextSegment, 800);
+    } else {
+      // Final destination marker
+      if (route.to_destination && route.to_destination.latitude) {
+        const destMarker = createRouteMarker(
+          {
+            latitude: route.to_destination.latitude,
+            longitude: route.to_destination.longitude,
+            name: route.to_destination.name
+          },
+          'Final Destination',
+          'final-destination'
+        );
+        routeLayers.push(destMarker);
+      }
+
+      // Fit map bounds after animation
+      setTimeout(() => {
+        displayRouteOnMap(route); // This will fit bounds
+      }, 1000);
+    }
+  }
+
+  drawNextSegment();
+}
+
+// 20. Export route as GPX (for external navigation apps)
+function exportRouteAsGPX(route) {
+  if (!route) return;
+
+  let gpxContent = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Mumbai Share Auto Finder">
+  <trk>
+    <name>${route.from_stand.name} to ${route.to_destination.name}</name>
+    <trkseg>`;
+
+  route.segments.forEach(segment => {
+    if (segment.geometry && segment.geometry.coordinates) {
+      segment.geometry.coordinates.forEach(coord => {
+        gpxContent += `
+      <trkpt lat="${coord[1]}" lon="${coord[0]}"></trkpt>`;
+      });
+    }
+  });
+
+  gpxContent += `
+    </trkseg>
+  </trk>
+</gpx>`;
+
+  // Create download link
+  const blob = new Blob([gpxContent], { type: 'application/gpx+xml' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `route_${route.from_stand.name.replace(/\s+/g, '_')}_to_${route.to_destination.name.replace(/\s+/g, '_')}.gpx`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// Make functions globally available for enhanced route finder
+window.displayRouteOnMap = displayRouteOnMap;
+window.clearRouteLayers = clearRouteLayers;
+window.highlightStandInRoute = highlightStandInRoute;
+window.animateRouteDrawing = animateRouteDrawing;
+window.exportRouteAsGPX = exportRouteAsGPX;
