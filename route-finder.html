@@ -66,13 +66,17 @@
 
             <div class="form-group">
               <label for="destinationInput">Destination</label>
-              <input
-                type="text"
-                id="destinationInput"
-                class="form-input"
-                placeholder="e.g., Linking Road, Bandra Market"
-                required
-              />
+              <div class="autocomplete-container">
+                <input
+                  type="text"
+                  id="destinationInput"
+                  class="form-input"
+                  placeholder="Start typing to see suggestions..."
+                  autocomplete="off"
+                  required
+                />
+                <div id="autocompleteDropdown" class="autocomplete-dropdown"></div>
+              </div>
               <div id="destinationError" class="error-message"></div>
             </div>
 
