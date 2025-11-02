@@ -60,16 +60,43 @@ class NetworkBuilder {
         });
       }
 
+      // Ensure basic connectivity - connect each stand to its nearest neighbor
+      if (connections.length < stands.length - 1) {
+        console.log('Adding basic connectivity connections...');
+
+        for (let i = 0; i < stands.length - 1; i++) {
+          const stand1 = stands[i];
+          const stand2 = stands[i + 1];
+
+          // Check if connection already exists
+          const exists = connections.some(conn =>
+            (conn.from_stand_id === stand1.id && conn.to_stand_id === stand2.id) ||
+            (conn.from_stand_id === stand2.id && conn.to_stand_id === stand1.id)
+          );
+
+          if (!exists) {
+            connections.push({
+              from_stand_id: stand1.id,
+              to_stand_id: stand2.id,
+              connection_type: 'direct'
+            });
+          }
+        }
+      }
+
       // Add connections based on existing routes
       await this.addRouteBasedConnections(stands);
 
+      // Remove duplicates before inserting
+      const uniqueConnections = this.removeDuplicateConnections(connections);
+
       // Insert connections in batches
-      if (connections.length > 0) {
-        await this.insertConnections(connections);
+      if (uniqueConnections.length > 0) {
+        await this.insertConnections(uniqueConnections);
       }
 
-      console.log(`Network built with ${connections.length} connections`);
-      return connections.length;
+      console.log(`Network built with ${uniqueConnections.length} unique connections`);
+      return uniqueConnections.length;
 
     } catch (error) {
       console.error('Error building initial network:', error);
