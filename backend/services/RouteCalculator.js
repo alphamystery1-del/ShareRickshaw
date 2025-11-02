@@ -14,10 +14,26 @@ class RouteCalculator {
     try {
       console.log(`Finding optimal route from stand ${fromStandId} to destination`, toDestinationCoords);
 
-      // Ensure network is loaded
-      await this.networkData.loadNetwork();
+      // Ensure network is loaded with fallback
+      try {
+        await this.networkData.loadNetwork();
+      } catch (networkError) {
+        console.log('Network loading error:', networkError.message);
+
+        // If it's a table doesn't exist error, try to initialize
+        if (networkError.message.includes('doesn\'t exist') ||
+            networkError.message.includes('ER_NO_SUCH_TABLE')) {
+
+          console.log('Attempting to initialize database...');
+          await this.initializeDatabase();
+          await this.networkData.loadNetwork();
+        } else {
+          throw networkError;
+        }
+      }
+
       if (!this.networkData.isNetworkLoaded()) {
-        throw new Error('Network data not available');
+        throw new Error('Network data not available. Please run the database setup script.');
       }
 
       const fromStand = this.networkData.getStandById(fromStandId);
