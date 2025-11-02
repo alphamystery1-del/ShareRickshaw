@@ -96,6 +96,7 @@ app.get('/', (req, res) => {
       profile: '/api/profile',
       stands: '/api/stands',
       routes: '/api/routes',
+      routeCalculation: '/api/route-calculation',
       bookings: '/api/bookings',
       driverStatus: '/api/driver-status'
     }
