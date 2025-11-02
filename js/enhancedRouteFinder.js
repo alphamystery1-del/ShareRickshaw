@@ -884,7 +884,7 @@ class FavoritesManager {
     // Remove from server if logged in
     if (window.isLoggedIn) {
       try {
-        await fetch(`${API_BASE_URL}/route-calculation/favorites/${favoriteId}`, {
+        await fetch(`${ROUTE_API_BASE_URL}/route-calculation/favorites/${favoriteId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${window.getAuthToken()}`
