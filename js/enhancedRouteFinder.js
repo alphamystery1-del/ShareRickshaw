@@ -175,7 +175,7 @@ class EnhancedRouteFinder {
 
     this.autocompleteTimeout = setTimeout(async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/route-calculation/autocomplete?q=${encodeURIComponent(query)}&limit=5`);
+        const response = await fetch(`${ROUTE_API_BASE_URL}/route-calculation/autocomplete?q=${encodeURIComponent(query)}&limit=5`);
         const data = await response.json();
 
         if (data.success) {
