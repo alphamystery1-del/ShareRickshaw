@@ -105,8 +105,17 @@ try {
   } else {
     console.log(`   ✅ No API_BASE_URL conflicts in enhancedRouteFinder.js`);
   }
+
+  // Check for getAuthToken vs getToken compatibility
+  const getAuthTokenMatches = enhancedContent.match(/getAuthToken/g);
+  if (getAuthTokenMatches) {
+    console.log(`   ❌ js/enhancedRouteFinder.js - getAuthToken function calls detected`);
+    syntaxOk = false;
+  } else {
+    console.log(`   ✅ Authentication function calls compatible`);
+  }
 } catch (error) {
-  console.log(`   ⚠️  Could not check for API_BASE_URL conflicts`);
+  console.log(`   ⚠️  Could not check for function compatibility`);
 }
 
 if (!syntaxOk) {
