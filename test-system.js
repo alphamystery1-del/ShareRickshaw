@@ -183,7 +183,8 @@ if (fs.existsSync(schemaPath)) {
 
   let schemaOk = true;
   requiredTables.forEach(table => {
-    if (schemaContent.includes(`CREATE TABLE.*${table}`)) {
+    if (schemaContent.includes(`CREATE TABLE IF NOT EXISTS ${table}`) ||
+        schemaContent.includes(`CREATE TABLE ${table}`)) {
       console.log(`   ✅ ${table} table`);
     } else {
       console.log(`   ❌ ${table} table - MISSING`);
