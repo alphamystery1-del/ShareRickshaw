@@ -13,7 +13,7 @@ const MAX_RECENT_SEARCHES = 3;
 const AUTOCOMPLETE_DEBOUNCE = 300;
 
 // API Configuration
-const API_BASE_URL = window.API_BASE_URL || '/api';
+const ROUTE_API_BASE_URL = window.API_BASE_URL || '/api';
 
 // DOM Elements
 let standSelect;
