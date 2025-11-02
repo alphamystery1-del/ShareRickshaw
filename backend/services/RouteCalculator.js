@@ -82,12 +82,21 @@ class RouteCalculator {
 
   async calculateDijkstraRoute(fromStand, toStand, toDestinationCoords, toDestinationName) {
     const graph = this.networkData.getGraph();
+    const allStands = this.networkData.getAllStands();
+
+    console.log(`Calculating route between stand ${fromStand.id} (${fromStand.name}) and stand ${toStand.id} (${toStand.name})`);
+    console.log(`Total stands available: ${allStands.length}`);
+    console.log(`From stand: ${JSON.stringify(fromStand)}`);
+    console.log(`To stand: ${JSON.stringify(toStand)}`);
 
     // Find shortest path using Dijkstra
     const path = graph.shortestPath(fromStand.id.toString(), toStand.id.toString());
 
     if (!path || path.length === 0) {
-      throw new Error('No route found between stands');
+      console.log(`No path found using Dijkstra. Creating fallback route...`);
+
+      // Fallback: create direct route between stands
+      return await this.createFallbackRoute(fromStand, toStand, toDestinationCoords, toDestinationName);
     }
 
     console.log(`Found path with ${path.length} stands:`, path);
