@@ -6,6 +6,7 @@
 let map;
 let markers = {};
 let standsData = [];
+let routeLayers = []; // Store route visualization layers
 
 // --- FIX: Leaflet default icon path issue (Moved outside DOMContentLoaded) ---
 // This ensures the icon paths are fixed immediately after the Leaflet library loads.
