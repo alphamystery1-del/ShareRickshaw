@@ -819,7 +819,7 @@ class FavoritesManager {
   }
 
   async loadFromServer() {
-    const response = await fetch(`${API_BASE_URL}/route-calculation/favorites`, {
+    const response = await fetch(`${ROUTE_API_BASE_URL}/route-calculation/favorites`, {
       headers: {
         'Authorization': `Bearer ${window.getAuthToken()}`
       }
@@ -843,7 +843,7 @@ class FavoritesManager {
     // Save to server if logged in
     if (window.isLoggedIn) {
       try {
-        const response = await fetch(`${API_BASE_URL}/route-calculation/favorites`, {
+        const response = await fetch(`${ROUTE_API_BASE_URL}/route-calculation/favorites`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
