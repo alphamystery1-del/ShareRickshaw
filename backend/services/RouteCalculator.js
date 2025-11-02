@@ -299,6 +299,75 @@ class RouteCalculator {
       return null;
     }
   }
+
+  async initializeDatabase() {
+    try {
+      console.log('Creating network_connections table...');
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS network_connections (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          from_stand_id INT NOT NULL,
+          to_stand_id INT NOT NULL,
+          connection_type ENUM('direct', 'transfer') DEFAULT 'direct',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT fk_from_stand FOREIGN KEY (from_stand_id) REFERENCES stands(id) ON DELETE CASCADE,
+          CONSTRAINT fk_to_stand FOREIGN KEY (to_stand_id) REFERENCES stands(id) ON DELETE CASCADE,
+          UNIQUE KEY unique_connection (from_stand_id, to_stand_id),
+          INDEX idx_from_stand (from_stand_id),
+          INDEX idx_to_stand (to_stand_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      console.log('Creating route_cache table...');
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS route_cache (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          from_stand_id INT NOT NULL,
+          to_lat DECIMAL(10,8) NOT NULL,
+          to_lng DECIMAL(11,8) NOT NULL,
+          route_data JSON NOT NULL,
+          total_time_minutes INT NOT NULL,
+          segment_count INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          expires_at TIMESTAMP NOT NULL,
+          CONSTRAINT fk_cache_from_stand FOREIGN KEY (from_stand_id) REFERENCES stands(id) ON DELETE CASCADE,
+          INDEX idx_route_lookup (from_stand_id, to_lat, to_lng),
+          INDEX idx_expires (expires_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      console.log('Creating user_favorites table...');
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS user_favorites (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          from_stand_id INT NOT NULL,
+          to_destination VARCHAR(100) NOT NULL,
+          to_lat DECIMAL(10,8),
+          to_lng DECIMAL(11,8),
+          nickname VARCHAR(50),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT fk_favorite_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          CONSTRAINT fk_favorite_from_stand FOREIGN KEY (from_stand_id) REFERENCES stands(id) ON DELETE CASCADE,
+          INDEX idx_user_favorites (user_id),
+          INDEX idx_user_stand_combo (user_id, from_stand_id, to_destination)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      console.log('Database tables created successfully');
+
+      // Build initial network connections
+      console.log('Building initial network connections...');
+      const NetworkBuilder = require('./NetworkBuilder');
+      const networkBuilder = new NetworkBuilder();
+      const connectionsCount = await networkBuilder.buildInitialNetwork();
+      console.log(`Created ${connectionsCount} network connections`);
+
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = RouteCalculator;
