@@ -77,6 +77,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/stands', standsRoutes);
 app.use('/api/routes', routesRoutes);
+app.use('/api/route-calculation', routeCalculationRoutes);
 app.use('/api/bookings', bookingsRoutes);
 
 // Driver status routes
