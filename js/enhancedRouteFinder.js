@@ -134,7 +134,7 @@ class EnhancedRouteFinder {
 
   async fetchStands() {
     try {
-      const response = await fetch(`${API_BASE_URL}/stands`);
+      const response = await fetch(`${ROUTE_API_BASE_URL}/stands`);
       if (!response.ok) {
         throw new Error("Failed to fetch stands");
       }
