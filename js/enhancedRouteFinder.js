@@ -821,7 +821,7 @@ class FavoritesManager {
   async loadFromServer() {
     const response = await fetch(`${ROUTE_API_BASE_URL}/route-calculation/favorites`, {
       headers: {
-        'Authorization': `Bearer ${window.getAuthToken()}`
+        'Authorization': `Bearer ${window.getToken()}`
       }
     });
 
@@ -847,7 +847,7 @@ class FavoritesManager {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${window.getAuthToken()}`
+            'Authorization': `Bearer ${window.getToken()}`
           },
           body: JSON.stringify({
             from_stand_id: favorite.from_stand.id,
@@ -887,7 +887,7 @@ class FavoritesManager {
         await fetch(`${ROUTE_API_BASE_URL}/route-calculation/favorites/${favoriteId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${window.getAuthToken()}`
+            'Authorization': `Bearer ${window.getToken()}`
           }
         });
       } catch (error) {
