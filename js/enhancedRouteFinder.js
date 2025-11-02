@@ -319,7 +319,7 @@ class EnhancedRouteFinder {
     const { fromStand, toDestination } = data;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/route-calculation/calculate`, {
+      const response = await fetch(`${ROUTE_API_BASE_URL}/route-calculation/calculate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
